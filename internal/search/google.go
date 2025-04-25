@@ -8,20 +8,20 @@ import (
 	"net/url"
 )
 
-type GoogleSearchEngine struct {
+type googleSearchEngine struct {
 	Url string
 	Key string
 	Cx  string
 }
 
 func NewGoogleSearchEngine(url string, key string) (SearchEngine, error) {
-	return &GoogleSearchEngine{
+	return &googleSearchEngine{
 		Url: url,
 		Key: key,
 	}, nil
 }
 
-func (g *GoogleSearchEngine) Search(ctx context.Context, query string, queryParams QueryParams) (*SearchResult, error) {
+func (g *googleSearchEngine) Search(ctx context.Context, query string, queryParams QueryParams) (*SearchResult, error) {
 	url, err := url.Parse(g.Url)
 	if err != nil {
 		return nil, err
