@@ -1,0 +1,229 @@
+package chunk
+
+import (
+	"context"
+	"strings"
+)
+
+type TokenChunker struct {
+	Maxsize      int
+	Minsize      int
+	ChunkOverlap float64
+}
+
+func NewTokenChunker(maxsize int, minsize int, overlap float64) Chunker {
+	return &TokenChunker{
+		Maxsize:      maxsize,
+		Minsize:      minsize,
+		ChunkOverlap: overlap,
+	}
+}
+
+func (tc *TokenChunker) Chunk(ctx context.Context, content string) ([]Chunk, error) {
+	if strings.TrimSpace(content) == "" {
+		return []Chunk{}, nil
+	}
+
+	var chunks []Chunk
+	paragraphs := tc.splitIntoParagraphs(content)
+
+	currentChunk := ""
+	chunkIndex := 0
+
+	for _, paragraph := range paragraphs {
+		// Try adding the whole paragraph
+		testChunk := currentChunk
+		if testChunk != "" {
+			testChunk += "\n\n" + paragraph
+		} else {
+			testChunk = paragraph
+		}
+
+		testTokenCount := simpleTokenCount(testChunk)
+
+		if testTokenCount <= tc.Maxsize {
+			// Paragraph fits, add it
+			currentChunk = testChunk
+		} else if currentChunk != "" {
+			// Current chunk is full, save it and start new one
+			tokenCount := simpleTokenCount(currentChunk)
+			if tokenCount >= tc.Minsize {
+				chunks = append(chunks, Chunk{
+					Content:    strings.TrimSpace(currentChunk),
+					TokenCount: tokenCount,
+				})
+				chunkIndex++
+			}
+
+			// Start new chunk with overlap
+			overlapText := tc.getOverlapText(currentChunk)
+			if overlapText != "" && simpleTokenCount(overlapText+"\n\n"+paragraph) <= tc.Maxsize {
+				currentChunk = overlapText + "\n\n" + paragraph
+			} else {
+				currentChunk = paragraph
+			}
+
+			// If single paragraph is still too large, split by sentences
+			if simpleTokenCount(currentChunk) > tc.Maxsize {
+				sentenceChunks := tc.chunkBySentences(paragraph, &chunkIndex)
+				chunks = append(chunks, sentenceChunks...)
+				currentChunk = ""
+			}
+		} else {
+			// First paragraph is too large, split by sentences
+			sentenceChunks := tc.chunkBySentences(paragraph, &chunkIndex)
+			chunks = append(chunks, sentenceChunks...)
+		}
+	}
+
+	// Add final chunk if it exists and meets minimum size
+	if currentChunk != "" {
+		tokenCount := simpleTokenCount(currentChunk)
+		if tokenCount >= tc.Minsize {
+			chunks = append(chunks, Chunk{
+				Content:    strings.TrimSpace(currentChunk),
+				TokenCount: tokenCount,
+			})
+		}
+	}
+
+	return chunks, nil
+}
+
+// chunkBySentences handles chunking when paragraphs are too large
+func (tc *TokenChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
+	var chunks []Chunk
+	sentences := tc.splitIntoSentences(text)
+
+	currentChunk := ""
+
+	for _, sentence := range sentences {
+		testChunk := currentChunk
+		if testChunk != "" {
+			testChunk += " " + sentence
+		} else {
+			testChunk = sentence
+		}
+
+		testTokenCount := simpleTokenCount(testChunk)
+
+		if testTokenCount <= tc.Maxsize {
+			currentChunk = testChunk
+		} else if currentChunk != "" {
+			// Save current chunk
+			tokenCount := simpleTokenCount(currentChunk)
+			if tokenCount >= tc.Minsize {
+				chunks = append(chunks, Chunk{
+					Content:    strings.TrimSpace(currentChunk),
+					TokenCount: tokenCount,
+				})
+				*chunkIndex++
+			}
+
+			// Start new chunk with overlap
+			overlapText := tc.getOverlapText(currentChunk)
+			if overlapText != "" && simpleTokenCount(overlapText+" "+sentence) <= tc.Maxsize {
+				currentChunk = overlapText + " " + sentence
+			} else {
+				currentChunk = sentence
+			}
+		} else {
+			// Single sentence is too large, keep it anyway
+			currentChunk = sentence
+		}
+	}
+
+	// Add final sentence chunk
+	if currentChunk != "" {
+		tokenCount := simpleTokenCount(currentChunk)
+		if tokenCount >= tc.Minsize {
+			chunks = append(chunks, Chunk{
+				Content:    strings.TrimSpace(currentChunk),
+				TokenCount: tokenCount,
+			})
+			*chunkIndex++
+		}
+	}
+
+	return chunks
+}
+
+func (tc *TokenChunker) splitIntoParagraphs(text string) []string {
+	paragraphs := strings.Split(text, "\n")
+
+	// Filter empty paragraphs
+	var filteredParagraphs []string
+	for _, p := range paragraphs {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			filteredParagraphs = append(filteredParagraphs, p)
+		}
+	}
+	return filteredParagraphs
+}
+
+func (tc *TokenChunker) splitIntoSentences(text string) []string {
+	var sentences []string
+	var currentSentence string
+
+	for _, r := range text {
+		currentSentence += string(r)
+		// End of sentence
+		if r == '.' || r == '!' || r == '?' {
+			sentences = append(sentences, strings.TrimSpace(currentSentence))
+			currentSentence = ""
+		}
+	}
+
+	if currentSentence != "" {
+		sentences = append(sentences, strings.TrimSpace(currentSentence))
+	}
+	return sentences
+}
+
+// getOverlapText extracts overlap text from the end of a chunk
+func (tc *TokenChunker) getOverlapText(text string) string {
+	overlapTokens := int(float64(tc.Maxsize) * tc.ChunkOverlap)
+
+	// Try to get overlap by sentences first
+	sentences := tc.splitIntoSentences(text)
+	if len(sentences) == 0 {
+		return ""
+	}
+
+	overlapText := ""
+
+	// Start from the end and work backwards
+	for i := len(sentences) - 1; i >= 0; i-- {
+		testText := sentences[i]
+		if overlapText != "" {
+			testText = sentences[i] + " " + overlapText
+		}
+
+		if simpleTokenCount(testText) <= overlapTokens {
+			overlapText = testText
+		} else {
+			break
+		}
+	}
+
+	// If no good sentence overlap, use character-based overlap
+	if overlapText == "" {
+		overlapChars := overlapTokens * 4
+		if len(text) > overlapChars {
+			overlapText = text[len(text)-overlapChars:]
+			// Try to start at a word boundary
+			if spaceIdx := strings.Index(overlapText, " "); spaceIdx != -1 {
+				overlapText = overlapText[spaceIdx+1:]
+			}
+		} else {
+			overlapText = text
+		}
+	}
+
+	return overlapText
+}
+
+func simpleTokenCount(content string) int {
+	return (len(content) / 4)
+}
