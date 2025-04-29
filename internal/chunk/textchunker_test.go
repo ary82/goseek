@@ -22,7 +22,7 @@ func TestTokenChunker_Chunk(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// TODO: construct the receiver type.
-			tc := &chunk.TokenChunker{
+			tc := &chunk.TextChunker{
 				Maxsize:      1024,
 				Minsize:      256,
 				ChunkOverlap: 0.1,

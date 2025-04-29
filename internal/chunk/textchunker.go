@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-type TokenChunker struct {
+type TextChunker struct {
 	Maxsize      int
 	Minsize      int
 	ChunkOverlap float64
 }
 
-func NewTokenChunker(maxsize int, minsize int, overlap float64) Chunker {
-	return &TokenChunker{
+func NewTextChunker(maxsize int, minsize int, overlap float64) Chunker {
+	return &TextChunker{
 		Maxsize:      maxsize,
 		Minsize:      minsize,
 		ChunkOverlap: overlap,
 	}
 }
 
-func (tc *TokenChunker) Chunk(ctx context.Context, content string) ([]Chunk, error) {
+func (tc *TextChunker) Chunk(ctx context.Context, content string) ([]Chunk, error) {
 	if strings.TrimSpace(content) == "" {
 		return []Chunk{}, nil
 	}
@@ -91,7 +91,7 @@ func (tc *TokenChunker) Chunk(ctx context.Context, content string) ([]Chunk, err
 }
 
 // chunkBySentences handles chunking when paragraphs are too large
-func (tc *TokenChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
+func (tc *TextChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
 	var chunks []Chunk
 	sentences := tc.splitIntoSentences(text)
 
@@ -148,7 +148,7 @@ func (tc *TokenChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
 	return chunks
 }
 
-func (tc *TokenChunker) splitIntoParagraphs(text string) []string {
+func (tc *TextChunker) splitIntoParagraphs(text string) []string {
 	paragraphs := strings.Split(text, "\n")
 
 	// Filter empty paragraphs
@@ -162,7 +162,7 @@ func (tc *TokenChunker) splitIntoParagraphs(text string) []string {
 	return filteredParagraphs
 }
 
-func (tc *TokenChunker) splitIntoSentences(text string) []string {
+func (tc *TextChunker) splitIntoSentences(text string) []string {
 	var sentences []string
 	var currentSentence string
 
@@ -182,7 +182,7 @@ func (tc *TokenChunker) splitIntoSentences(text string) []string {
 }
 
 // getOverlapText extracts overlap text from the end of a chunk
-func (tc *TokenChunker) getOverlapText(text string) string {
+func (tc *TextChunker) getOverlapText(text string) string {
 	overlapTokens := int(float64(tc.Maxsize) * tc.ChunkOverlap)
 
 	// Try to get overlap by sentences first
