@@ -2,6 +2,7 @@ package chunk
 
 import (
 	"context"
+	"log"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ func NewTextChunker(maxsize int, minsize int, overlap float64) Chunker {
 	}
 }
 
-func (tc *TextChunker) Chunk(ctx context.Context, content string) ([]Chunk, error) {
+func (tc *TextChunker) Chunk(ctx context.Context, link string, content string) ([]Chunk, error) {
 	if strings.TrimSpace(content) == "" {
 		return []Chunk{}, nil
 	}
@@ -50,6 +51,7 @@ func (tc *TextChunker) Chunk(ctx context.Context, content string) ([]Chunk, erro
 			if tokenCount >= tc.Minsize {
 				chunks = append(chunks, Chunk{
 					Content:    strings.TrimSpace(currentChunk),
+					Link:       link,
 					TokenCount: tokenCount,
 				})
 				chunkIndex++
@@ -65,13 +67,13 @@ func (tc *TextChunker) Chunk(ctx context.Context, content string) ([]Chunk, erro
 
 			// If single paragraph is still too large, split by sentences
 			if simpleTokenCount(currentChunk) > tc.Maxsize {
-				sentenceChunks := tc.chunkBySentences(paragraph, &chunkIndex)
+				sentenceChunks := tc.chunkBySentences(paragraph, link, &chunkIndex)
 				chunks = append(chunks, sentenceChunks...)
 				currentChunk = ""
 			}
 		} else {
 			// First paragraph is too large, split by sentences
-			sentenceChunks := tc.chunkBySentences(paragraph, &chunkIndex)
+			sentenceChunks := tc.chunkBySentences(paragraph, link, &chunkIndex)
 			chunks = append(chunks, sentenceChunks...)
 		}
 	}
@@ -83,15 +85,17 @@ func (tc *TextChunker) Chunk(ctx context.Context, content string) ([]Chunk, erro
 			chunks = append(chunks, Chunk{
 				Content:    strings.TrimSpace(currentChunk),
 				TokenCount: tokenCount,
+				Link:       link,
 			})
 		}
 	}
 
+	log.Printf("chunk succeeded with %v results", len(chunks))
 	return chunks, nil
 }
 
 // chunkBySentences handles chunking when paragraphs are too large
-func (tc *TextChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
+func (tc *TextChunker) chunkBySentences(text string, link string, chunkIndex *int) []Chunk {
 	var chunks []Chunk
 	sentences := tc.splitIntoSentences(text)
 
@@ -116,6 +120,7 @@ func (tc *TextChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
 				chunks = append(chunks, Chunk{
 					Content:    strings.TrimSpace(currentChunk),
 					TokenCount: tokenCount,
+					Link:       link,
 				})
 				*chunkIndex++
 			}
@@ -140,6 +145,7 @@ func (tc *TextChunker) chunkBySentences(text string, chunkIndex *int) []Chunk {
 			chunks = append(chunks, Chunk{
 				Content:    strings.TrimSpace(currentChunk),
 				TokenCount: tokenCount,
+				Link:       link,
 			})
 			*chunkIndex++
 		}
