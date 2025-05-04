@@ -3,6 +3,7 @@ package scrape
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -16,8 +17,12 @@ type webScraper struct {
 	maxWorkers int
 }
 
-func NewWebScraper() Scraper {
-	return &webScraper{}
+func NewWebScraper(client *http.Client, ua string, mw int) Scraper {
+	return &webScraper{
+		client:     client,
+		userAgent:  ua,
+		maxWorkers: mw,
+	}
 }
 
 func (w *webScraper) Scrape(ctx context.Context, urls []string) (map[string]ScrapedContent, error) {
@@ -66,6 +71,7 @@ func (w *webScraper) Scrape(ctx context.Context, urls []string) (map[string]Scra
 		}
 	}
 
+	log.Printf("scrape succeeded with %v results", len(validResults))
 	return validResults, nil
 }
 
