@@ -3,6 +3,7 @@ package vectorstorage
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/pinecone-io/go-pinecone/v3/pinecone"
 )
@@ -39,6 +40,7 @@ func (ps *PineconeStorage) UpsertRecords(ctx context.Context, records any, ns st
 		return fmt.Errorf("failed to upsert vectors: %v", err)
 	}
 
+	log.Printf("upsert succeeded")
 	return nil
 }
 
@@ -55,11 +57,12 @@ func (ps *PineconeStorage) SearchTopK(ctx context.Context, query string, k int, 
 				"text": query,
 			},
 		},
-		Fields: &[]string{"text"},
+		Fields: &[]string{"text", "link"},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to search records: %v", err)
 	}
 
+	log.Printf("vectorsearch succeeded with %v results", len(res.Result.Hits))
 	return res, err
 }
