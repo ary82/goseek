@@ -14,10 +14,11 @@ type googleSearchEngine struct {
 	Cx  string
 }
 
-func NewGoogleSearchEngine(url string, key string) (SearchEngine, error) {
+func NewGoogleSearchEngine(url string, key string, cx string) (SearchEngine, error) {
 	return &googleSearchEngine{
 		Url: url,
 		Key: key,
+		Cx:  cx,
 	}, nil
 }
 
@@ -45,5 +46,6 @@ func (g *googleSearchEngine) Search(ctx context.Context, query string, queryPara
 		return nil, err
 	}
 
+	log.Printf("search succeeded with %v results", len(sr.Items))
 	return &sr, nil
 }
