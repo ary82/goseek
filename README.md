@@ -1,18 +1,24 @@
 # GoSeek
 
-## Components & their Config Params
+An ssh app that searches the web to provide LLM answers, straight to the terminal.
 
-- [ ] SearchAPI
+![GoSeek](./docs/example.png)
 
-  - Name
-  - URL
-  - Key
+## Usage
 
-- [ ] Scrape API
+- Populate the `.env` file
+- `make run`
+- `ssh localhost -p 23234`
+- Ask away!
 
-  - Threads
+## To-do
 
-- [ ] LLM
+### Performance
 
-  - URL
-  - Key
+- [x] Concurrent Scraping
+- [ ] Concurrent chunking
+
+### Scalability
+
+- [ ] Distribute
+- [ ] Use a MQ for comms
