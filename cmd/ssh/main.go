@@ -230,10 +230,10 @@ var keys = keyMap{
 		key.WithKeys("ctrl+c", "q"),
 		key.WithHelp("ctrl+c/q", "quit"),
 	),
-	Help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
+	// Help: key.NewBinding(
+	// key.WithKeys("?"),
+	// key.WithHelp("?", "toggle help"),
+	// ),
 }
 
 // Styles
