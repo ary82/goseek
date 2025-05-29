@@ -1,0 +1,14 @@
+digraph {
+  bgcolor=transparent
+  rankdir=LR
+  graph [fontsize=18 fontname="HackNerdFont" style=filled color=lightblue2]
+  node [fontsize=14 fontname="HackNerdFont" shape=box style=filled fillcolor=white]
+  edge [fontsize=12 minlen=2 fontname="HackNerdFont"]
+
+  subgraph cluster {
+    Search -> Scrape_w1 -> Chunk -> Embed -> "Semantic Search" -> LLM
+    Search -> Scrape_w2 -> Chunk
+    Search -> Scrape_w3 -> Chunk
+    Search -> Scrape_w4 -> Chunk
+  }
+}
