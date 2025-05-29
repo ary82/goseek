@@ -11,8 +11,9 @@ An ssh app that searches the web to provide LLM answers, straight to the termina
 - `ssh localhost -p 23234`
 - Ask away!
 
-## Arch
-![arch](./docs/graphviz/arch.png) 
+## Data Flow
+
+![arch](./docs/graphviz/arch.png)
 
 ## To-do
 
