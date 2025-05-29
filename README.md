@@ -17,10 +17,22 @@ An ssh app that searches the web to provide LLM answers, straight to the termina
 
 ## To-do
 
+## Features
+
+- [ ] Data Persistance
+- [ ] User Management/Auth
+
+## Code Quality
+
+- [x] Modular
+- [ ] Better error handling
+- [ ] Better logging
+
 ### Performance
 
 - [x] Concurrent Scraping
 - [ ] Concurrent chunking
+- [ ] Remove Data Model conversions
 
 ### Scalability
 
