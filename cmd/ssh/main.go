@@ -133,7 +133,7 @@ func (p *GoSeekPipeline) ProcessQuery(ctx context.Context, query string) (string
 		}
 		records = append(records, &record)
 		num += 1
-		if num == 50 {
+		if num == 80 {
 			err = p.vector.UpsertRecords(ctx, records, ns)
 			if err != nil {
 				log.Printf("upsert failed")
@@ -424,8 +424,6 @@ func max(a, b int) int {
 
 // SSH Server setup
 func main() {
-	// Initialize pipeline with mock implementations
-	// Replace these with your actual implementations
 	pipeline, err := NewGoSeekPipeline()
 	if err != nil {
 		log.Fatal(err)
